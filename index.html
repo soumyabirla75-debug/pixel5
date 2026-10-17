@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LiveRoom — Make Any Web Page Multiplayer in 10 Lines</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+/* LiveRoom CSS Design System */
+:root {
+  --bg-primary: #090d16;
+  --bg-secondary: #0f172a;
+  --bg-card: rgba(17, 24, 39, 0.85);
+  --border-color: rgba(255, 255, 255, 0.08);
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --accent-indigo: #6366f1;
+  --accent-purple: #8b5cf6;
+  --accent-cyan: #06b6d4;
+  --accent-emerald: #10b981;
+  --accent-amber: #f59e0b;
+  --accent-rose: #f43f5e;
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.45);
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --font-sans: 'Space Grotesk', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+[data-theme="light"] {
+  --bg-primary: #f8fafc;
+  --bg-secondary: #f1f5f9;
+  --bg-card: rgba(255, 255, 255, 0.95);
+  --border-color: rgba(0, 0, 0, 0.09);
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-sans); background: var(--bg-primary); color: var(--text-primary); line-height: 1.5; min-height: 100vh; overflow-x: hidden; transition: 0.3s ease; }
+.navbar { position: sticky; top: 0; height: 68px; background: rgba(9, 13, 22, 0.85); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; z-index: 1000; }
+.nav-brand { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 1.25rem; color: var(--text-primary); text-decoration: none; }
+.logo-badge { width: 34px; height: 34px; background: linear-gradient(135deg, var(--accent-indigo), var(--accent-purple)); border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 16px rgba(99, 102, 241, 0.5); }
+.pulse-dot { width: 10px; height: 10px; background: #fff; border-radius: 50%; animation: pulse 2s infinite; }
+@keyframes pulse { 0% { transform: scale(0.9); opacity: 0.8; } 50% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 10px #fff; } 100% { transform: scale(0.9); opacity: 0.8; } }
+.nav-links { display: flex; gap: 8px; list-style: none; }
+.nav-tab { padding: 8px 16px; font-size: 0.9rem; font-weight: 600; color: var(--text-secondary); background: transparent; border: none; border-radius: var(--radius-sm); cursor: pointer; transition: 0.2s; }
+.nav-tab:hover { color: var(--text-primary); background: var(--border-color); }
+.nav-tab.active { color: #fff; background: var(--accent-indigo); box-shadow: 0 2px 10px rgba(99, 102, 241, 0.35); }
+.status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 0.8rem; font-weight: 700; border-radius: 20px; text-transform: uppercase; }
+.status-badge.online { background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); border: 1px solid rgba(16, 185, 129, 0.3); }
+.status-badge.connecting, .status-badge.reconnecting { background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); border: 1px solid rgba(245, 158, 11, 0.3); }
+.btn-icon { background: transparent; border: 1px solid var(--border-color); color: var(--text-primary); width: 36px; height: 36px; border-radius: var(--radius-sm); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.view-section { display: none; max-width: 1280px; margin: 0 auto; padding: 2.5rem 1.5rem 6rem; }
+.view-section.active { display: block; animation: fadeIn 0.25s ease-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.hero { text-align: center; padding: 3rem 1rem 4rem; max-width: 860px; margin: 0 auto; }
+.hero-pill { display: inline-flex; padding: 6px 14px; background: rgba(99, 102, 241, 0.12); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 20px; font-size: 0.85rem; font-weight: 600; color: var(--accent-indigo); margin-bottom: 1.5rem; }
+.hero h1 { font-size: 3.25rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1.15; margin-bottom: 1.25rem; }
+.gradient-text { background: linear-gradient(135deg, #a5b4fc, #818cf8, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.btn-primary { background: linear-gradient(135deg, var(--accent-indigo), var(--accent-purple)); color: #fff; border: none; padding: 12px 24px; font-weight: 700; border-radius: var(--radius-sm); cursor: pointer; box-shadow: 0 4px 18px rgba(99, 102, 241, 0.4); }
+.btn-secondary { background: rgba(255, 255, 255, 0.05); color: var(--text-primary); border: 1px solid var(--border-color); padding: 10px 18px; font-weight: 600; border-radius: var(--radius-sm); cursor: pointer; }
+.btn-chaos { background: rgba(244, 63, 94, 0.15); color: var(--accent-rose); border: 1px solid rgba(244, 63, 94, 0.4); padding: 8px 14px; font-weight: 700; border-radius: var(--radius-sm); cursor: pointer; }
+.room-bar { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 2rem; }
+.room-id-tag { font-family: var(--font-mono); font-weight: 700; background: rgba(99, 102, 241, 0.15); color: var(--accent-indigo); padding: 6px 12px; border-radius: var(--radius-sm); border: 1px solid rgba(99, 102, 241, 0.3); }
+.playground-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+@media (max-width: 860px) { .playground-grid { grid-template-columns: 1fr; } }
+.panel-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.5rem; box-shadow: var(--shadow-lg); }
+.quiz-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 2.5rem; box-shadow: var(--shadow-lg); }
+.poll-option-btn { position: relative; background: var(--bg-secondary); border: 2px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem 1.25rem; font-family: inherit; font-size: 1.05rem; font-weight: 600; color: var(--text-primary); cursor: pointer; text-align: left; overflow: hidden; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; width: 100%; }
+.poll-option-btn.selected { border-color: var(--accent-indigo); box-shadow: 0 0 16px rgba(99, 102, 241, 0.35); }
+.poll-bar { position: absolute; top: 0; left: 0; height: 100%; background: linear-gradient(90deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.3)); pointer-events: none; transition: width 0.4s ease; z-index: 0; }
+.poll-text { position: relative; z-index: 1; }
+.poll-count { position: relative; z-index: 1; font-family: var(--font-mono); font-weight: 700; color: var(--accent-indigo); }
+.sticky-board { min-height: 440px; background: var(--bg-secondary); border: 2px dashed var(--border-color); border-radius: var(--radius-lg); padding: 1.5rem; display: flex; flex-wrap: wrap; gap: 20px; }
+.sticky-note { width: 220px; min-height: 160px; padding: 16px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); color: #1e293b; display: flex; flex-direction: column; justify-content: space-between; }
+.sticky-yellow { background: #fef08a; } .sticky-coral { background: #fecdd3; } .sticky-mint { background: #bbf7d0; } .sticky-sky { background: #bae6fd; }
+.sticky-textarea { width: 100%; border: none; background: transparent; font-family: inherit; font-size: 0.95rem; color: inherit; resize: none; outline: none; flex: 1; }
+.devtools-drawer { position: fixed; bottom: 0; left: 0; width: 100vw; height: 44px; background: rgba(15, 20, 34, 0.95); backdrop-filter: blur(16px); border-top: 1px solid var(--border-color); z-index: 2000; transition: height 0.3s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; overflow: hidden; }
+.devtools-drawer.open { height: 45vh; }
+.devtools-header { height: 44px; min-height: 44px; padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none; }
+.devtools-body { display: grid; grid-template-columns: 1fr 1fr 280px; flex: 1; overflow: hidden; }
+.devtools-column { border-right: 1px solid var(--border-color); display: flex; flex-direction: column; overflow: hidden; }
+.devtools-col-header { padding: 8px 14px; background: rgba(0, 0, 0, 0.2); border-bottom: 1px solid var(--border-color); font-family: var(--font-mono); font-size: 0.75rem; font-weight: 700; color: var(--text-muted); }
+.devtools-content { flex: 1; padding: 12px; font-family: var(--font-mono); font-size: 0.8rem; overflow-y: auto; }
+.toast-container { position: fixed; bottom: 60px; right: 24px; display: flex; flex-direction: column; gap: 8px; z-index: 99999; }
+.toast { padding: 10px 16px; border-radius: var(--radius-sm); background: rgba(17, 24, 39, 0.95); border: 1px solid var(--border-color); color: #fff; font-size: 0.85rem; font-weight: 600; box-shadow: var(--shadow-lg); }
+  </style>
+</head>
+<body>
+  <header class="navbar">
+    <a href="#" class="nav-brand" onclick="switchTab('landing'); return false;">
+      <div class="logo-badge"><div class="pulse-dot"></div></div>
+      <span>LiveRoom</span>
+    </a>
+    <nav>
+      <ul class="nav-links">
+        <li><button class="nav-tab active" data-tab="landing" onclick="switchTab('landing')">Overview</button></li>
+        <li><button class="nav-tab" data-tab="playground" onclick="switchTab('playground')">Playground</button></li>
+        <li><button class="nav-tab" data-tab="quiz" onclick="switchTab('quiz')">Quiz Demo</button></li>
+        <li><button class="nav-tab" data-tab="stickies" onclick="switchTab('stickies')">Sticky Board</button></li>
+      </ul>
+    </nav>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div id="statusBadge" class="status-badge connecting"><span id="statusText">Connecting</span></div>
+      <button class="btn-icon" title="Toggle DevTools" onclick="toggleDevTools()">🛠️</button>
+      <button class="btn-icon" title="Toggle Theme" onclick="toggleTheme()">🌙</button>
+    </div>
+  </header>
+
+  <!-- LANDING -->
+  <main id="view-landing" class="view-section active">
+    <section class="hero">
+      <div class="hero-pill">⚡ Ultra-Lightweight &middot; Authoritative Sync</div>
+      <h1>QUIZ MANIA <br><span class="gradient-text">Multiplayer Game</span></h1>
+      <p style="color:var(--text-secondary); margin:1.5rem 0 2rem;">Zero external dependencies. Server-assigned monotonic sequences. Optimistic UI and automatic offline pending queue flush.</p>
+      <div style="display:flex; justify-content:center; gap:14px;">
+        <button class="btn-primary" onclick="switchTab('playground')">Launch Playground &rarr;</button>
+        <button class="btn-secondary" onclick="switchTab('quiz')">Live Quiz Arena</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- PLAYGROUND -->
+  <section id="view-playground" class="view-section">
+    <div class="room-bar">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <span>Room:</span>
+        <span id="currentRoomTag" class="room-id-tag">loading...</span>
+        <button class="btn-secondary" onclick="copyRoomLink()">🔗 Copy Link</button>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button class="btn-secondary" onclick="room.undo()">↩️ Undo</button>
+        <button class="btn-secondary" onclick="room.redo()">↪️ Redo</button>
+        <button class="btn-chaos" onclick="simulateChaosDisconnect()">⚡ Simulate 4s Disconnect</button>
+      </div>
+    </div>
+    <div class="playground-grid">
+      <div class="panel-card">
+        <h3 style="margin-bottom:1rem;">Interactive Shared Canvas</h3>
+        <label style="font-weight:600; font-size:0.9rem;">Shared Input Box:</label>
+        <input type="text" id="sharedTextInput" placeholder="Type here in any connected tab..." style="width:100%; padding:10px; margin:8px 0 16px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-secondary); color:#fff;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span>Counter:</span>
+          <button class="btn-secondary" onclick="adjustCounter(-1)">-</button>
+          <span id="sharedCounterVal" style="font-size:1.4rem; font-weight:700; font-family:var(--font-mono);">0</span>
+          <button class="btn-secondary" onclick="adjustCounter(1)">+</button>
+        </div>
+        <div style="display:flex; gap:10px; margin-top:20px;">
+          <button style="font-size:1.5rem; background:none; border:none; cursor:pointer;" onclick="room.react('🔥')">🔥</button>
+          <button style="font-size:1.5rem; background:none; border:none; cursor:pointer;" onclick="room.react('❤️')">❤️</button>
+          <button style="font-size:1.5rem; background:none; border:none; cursor:pointer;" onclick="room.react('🚀')">🚀</button>
+          <button style="font-size:1.5rem; background:none; border:none; cursor:pointer;" onclick="room.react('🎉')">🎉</button>
+        </div>
+      </div>
+      <div class="panel-card">
+        <h3 style="margin-bottom:1rem;">Active Presence</h3>
+        <div id="usersListContainer" style="display:flex; flex-direction:column; gap:8px;"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="view-quiz" class="view-section">
+    <div style="max-width:760px; margin:0 auto;">
+      <div class="quiz-card">
+        <h2 style="margin-bottom:1.5rem;">Which realtime synchronization strategy do you prefer?</h2>
+        <div id="quizOptionsContainer"></div>
+        <div style="margin-top:20px; display:flex; justify-content:space-between; align-items:center;">
+          <span id="quizTotalVotes" style="font-family:var(--font-mono); font-weight:700; color:var(--accent-indigo);">Total Votes: 0</span>
+          <button class="btn-secondary" onclick="resetQuiz()">Reset Poll</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STICKIES -->
+  <section id="view-stickies" class="view-section">
+    <div style="margin-bottom:1rem; display:flex; gap:10px;">
+      <button class="btn-primary" onclick="addStickyNote()">+ Add Sticky Note</button>
+      <button class="btn-secondary" onclick="room.set('sticky_notes', {})">Clear Board</button>
+    </div>
+    <div class="sticky-board" id="stickyBoard"></div>
+  </section>
+
+  <!-- DEVTOOLS -->
+  <aside id="devtoolsDrawer" class="devtools-drawer">
+    <div class="devtools-header" onclick="toggleDevTools()">
+      <span style="font-family:var(--font-mono); font-weight:700; color:var(--accent-indigo);">🛠️ LIVE STATE INSPECTOR & EVENT LOG</span>
+      <span id="devPingBadge" style="font-size:0.75rem; color:var(--accent-emerald);">RTT: -- ms</span>
+    </div>
+    <div class="devtools-body">
+      <div class="devtools-column">
+        <div class="devtools-col-header">State Tree</div>
+        <div class="devtools-content"><pre id="devStateJson" style="color:#a5b4fc;">{}</pre></div>
+      </div>
+      <div class="devtools-column">
+        <div class="devtools-col-header">Operation Stream</div>
+        <div class="devtools-content" id="devEventLogContent"></div>
+      </div>
+      <div class="devtools-column" style="padding:14px; font-family:var(--font-mono);">
+        <div style="font-size:0.8rem; color:var(--text-muted);">ACTIVE ROOMS: <span id="metricRooms" style="color:#fff; font-weight:700;">--</span></div>
+        <div style="font-size:0.8rem; color:var(--text-muted); margin-top:8px;">MESSAGES / SEC: <span id="metricMsgSec" style="color:var(--accent-cyan); font-weight:700;">--</span></div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- EMBEDDED LIVEROOM CLIENT LIBRARY -->
+  <script>
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else { root.LiveRoom = factory().LiveRoom; if (typeof globalThis !== 'undefined') globalThis.LiveRoom = root.LiveRoom; }
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+  const uid = (p = 'c_') => p + Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
+  const resolveUrl = (srv) => {
+    if (srv) return srv.startsWith('ws') ? srv : (location.protocol === 'https:' ? 'wss://' : 'ws://') + srv.replace(/^https?:\/\//, '');
+    return (typeof location !== 'undefined' && location.host) ? (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host : 'ws://localhost:3000';
+  };
+  class EventEmitter {
+    constructor() { this._e = {}; }
+    on(k, fn) { (this._e[k] = this._e[k] || []).push(fn); return () => this.off(k, fn); }
+    off(k, fn) { if (this._e[k]) this._e[k] = this._e[k].filter(f => f !== fn); }
+    emit(k, ...args) { if (this._e[k]) this._e[k].forEach(f => { try { f(...args); } catch (e) { console.error(e); } }); }
+  }
+  class RoomSession extends EventEmitter {
+    constructor(roomId, options = {}) {
+      super();
+      this.roomId = roomId || 'lounge';
+      this.options = options;
+      this.serverUrl = resolveUrl(options.server);
+      const sk = `liveroom_uid_${this.roomId}`;
+      this.clientId = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem(sk)) || uid('u_');
+      try { if (typeof sessionStorage !== 'undefined') sessionStorage.setItem(sk, this.clientId); } catch (_) {}
+      this.name = options.name || `User-${this.clientId.slice(-4)}`;
+      this.color = options.color || ['#6366f1','#ec4899','#10b981','#f59e0b','#3b82f6','#8b5cf6'][Math.floor(Math.random() * 6)];
+      this._state = {}; this._lastSeq = 0; this._pendingOps = []; this._undoStack = []; this._redoStack = []; this._opHistory = []; this._presence = [];
+      this._ws = null; this._status = 'disconnected'; this._retry = 0; this._reconnTimer = null; this._heartTimer = null;
+      this._cursorsActive = false; this._cursorOverlay = null; this._lastCursorSent = 0;
+      this._connect();
+    }
+    _setStatus(s) { if (this._status !== s) { this._status = s; this.emit('status', s); } }
+    _connect() {
+      if (this._ws && (this._ws.readyState === 0 || this._ws.readyState === 1)) return;
+      this._setStatus(this._retry === 0 ? 'connecting' : 'reconnecting');
+      try { this._ws = new WebSocket(this.serverUrl); } catch (e) { this._scheduleReconnect(); return; }
+      this._ws.onopen = () => {
+        this._retry = 0; this._startHeartbeat();
+        this._send({ type: 'join', room: this.roomId, clientId: this.clientId, name: this.name, color: this.color, lastSeq: this._lastSeq });
+      };
+      this._ws.onmessage = (e) => {
+        try {
+          const m = JSON.parse(e.data);
+          if (m.type === 'joined' || m.type === 'snapshot') {
+            this.roomId = m.room || this.roomId; this._lastSeq = m.seq || 0; this._setStatus('online');
+            if (m.presence) { this._presence = m.presence; this.emit('presence', this._presence); }
+            if (m.state) {
+              this._state = Object.assign({}, m.state);
+              for (const k in this._state) this.emit('state', k, this._state[k].value, { seq: this._state[k].seq, initial: true });
+            }
+            this._flushPending();
+          } else if (m.type === 'catchup') {
+            this._lastSeq = m.seq || this._lastSeq; this._setStatus('online');
+            if (m.presence) { this._presence = m.presence; this.emit('presence', this._presence); }
+            if (Array.isArray(m.ops)) m.ops.forEach(op => this._applyOp(op));
+            this._flushPending();
+          } else if (m.type === 'state') this._applyOp(m);
+          else if (m.type === 'presence') { this._presence = m.users || []; this.emit('presence', this._presence); }
+          else if (m.type === 'user_joined') this.emit('user_joined', m.user);
+          else if (m.type === 'user_left') this.emit('user_left', { clientId: m.clientId, name: m.name });
+          else if (m.type === 'cursor') { this.emit('cursor', m.userId, { x: m.x, y: m.y }); if (this._cursorsActive) this._drawRemoteCursor(m.userId, m.x, m.y); }
+          else if (m.type === 'reaction') { this.emit('reaction', m); if (this._cursorsActive) this._floatEmoji(m.emoji, m.x, m.y); }
+          else if (m.type === 'pong' && m.clientTime) this.emit('latency', Date.now() - m.clientTime);
+        } catch (_) {}
+      };
+      this._ws.onclose = () => { if (this._heartTimer) clearInterval(this._heartTimer); this._ws = null; this._scheduleReconnect(); };
+    }
+    _scheduleReconnect() {
+      this._setStatus('reconnecting'); this._retry++;
+      const delay = Math.min(4000, 200 * Math.pow(1.5, Math.min(this._retry, 8))) + Math.random() * 200;
+      this._reconnTimer = setTimeout(() => this._connect(), Math.round(delay));
+    }
+    _startHeartbeat() {
+      if (this._heartTimer) clearInterval(this._heartTimer);
+      this._heartTimer = setInterval(() => { if (this._ws && this._ws.readyState === 1) this._send({ type: 'ping', clientTime: Date.now() }); }, 10000);
+    }
+    _send(obj) { if (this._ws && this._ws.readyState === 1) { try { this._ws.send(JSON.stringify(obj)); return true; } catch (_) {} } return false; }
+    _applyOp(op) {
+      if (op.seq > this._lastSeq) this._lastSeq = op.seq;
+      const idx = this._pendingOps.findIndex(p => p.opId === op.opId);
+      if (idx !== -1) this._pendingOps.splice(idx, 1);
+      this._state[op.key] = { value: op.value, seq: op.seq, version: op.version, updatedBy: op.updatedBy, ts: op.ts };
+      this.emit('state', op.key, op.value, { seq: op.seq, version: op.version, updatedBy: op.updatedBy, optimistic: false, opId: op.opId });
+    }
+    _flushPending() { for (const op of this._pendingOps) this._send({ type: 'set', opId: op.opId, key: op.key, value: op.value }); }
+    set(key, value) {
+      const opId = uid('op_');
+      const prev = this.get(key);
+      this._undoStack.push({ key, prev }); this._redoStack = [];
+      const cur = this._state[key];
+      this._state[key] = { value, version: (cur ? cur.version : 0) + 1, updatedBy: this.clientId, ts: Date.now(), seq: this._lastSeq, optimistic: true };
+      this.emit('state', key, value, { optimistic: true, opId, updatedBy: this.clientId });
+      this._pendingOps.push({ opId, key, value, ts: Date.now() });
+      this._send({ type: 'set', opId, key, value });
+    }
+    get(key) { return this._state[key] ? this._state[key].value : undefined; }
+    state() { const res = {}; for (const k in this._state) res[k] = this._state[k].value; return res; }
+    rawState() { return Object.assign({}, this._state); }
+    link() { return typeof location !== 'undefined' ? location.href : ''; }
+    undo() { if (this._undoStack.length === 0) return; const it = this._undoStack.pop(); this._redoStack.push({ key: it.key, prev: this.get(it.key) }); this.set(it.key, it.prev); }
+    redo() { if (this._redoStack.length === 0) return; const it = this._redoStack.pop(); this.set(it.key, it.prev); }
+    react(emoji) { this._send({ type: 'reaction', emoji, x: 0.5, y: 0.5 }); }
+    simulateDisconnect(sec = 3) { if (this._ws) { try { this._ws.close(); } catch (_) {} this._ws = null; } this._setStatus('reconnecting'); setTimeout(() => this._connect(), sec * 1000); }
+    cursors(enable = true) {
+      if (typeof window === 'undefined') return;
+      if (!enable) { if (this._cursorOverlay) this._cursorOverlay.remove(); return; }
+      this._cursorsActive = true;
+      if (!this._cursorOverlay) {
+        this._cursorOverlay = document.createElement('div');
+        this._cursorOverlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:999999;';
+        document.body.appendChild(this._cursorOverlay);
+      }
+      window.addEventListener('mousemove', (e) => {
+        const now = Date.now(); if (now - this._lastCursorSent < 32) return; this._lastCursorSent = now;
+        this._send({ type: 'cursor', x: Number((e.clientX / window.innerWidth).toFixed(4)), y: Number((e.clientY / window.innerHeight).toFixed(4)) });
+      }, { passive: true });
+    }
+    _drawRemoteCursor(userId, nx, ny) {
+      if (!this._cursorOverlay) return;
+      let el = this._cursorOverlay.querySelector(`[data-uid="${userId}"]`);
+      const user = this._presence.find(u => u.clientId === userId);
+      const name = user ? user.name : `User ${userId.slice(-4)}`;
+      const col = user ? user.color : '#6366f1';
+      if (!el) {
+        el = document.createElement('div'); el.setAttribute('data-uid', userId);
+        el.style.cssText = 'position:absolute;top:0;left:0;transition:transform 0.08s linear;pointer-events:none;display:flex;align-items:center;gap:4px;';
+        el.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="${col}" stroke="#fff" stroke-width="1.5"><path d="M5.5 3.2v17.6c0 .4.5.7.8.3l4.9-4.8c.1-.1.2-.2.3-.2h6.9c.4 0 .6-.4.3-.8L5.8 2.8c-.3-.3-.8 0-.8.4z"/></svg><span style="background:${col};color:#fff;font:600 11px sans-serif;padding:2px 6px;border-radius:10px;">${name}</span>`;
+        this._cursorOverlay.appendChild(el);
+      }
+      el.style.transform = `translate3d(${Math.round(nx * window.innerWidth)}px,${Math.round(ny * window.innerHeight)}px,0)`;
+    }
+    _floatEmoji(emoji, nx, ny) {
+      const el = document.createElement('div'); el.textContent = emoji;
+      el.style.cssText = `position:fixed;left:${Math.round(nx * window.innerWidth)}px;top:${Math.round(ny * window.innerHeight)}px;font-size:28px;pointer-events:none;z-index:1000000;animation:lr-f 1.8s ease-out forwards;`;
+      if (!document.getElementById('lr-kf')) {
+        const s = document.createElement('style'); s.id = 'lr-kf';
+        s.textContent = '@keyframes lr-f{0%{transform:translate(-50%,0);opacity:1}100%{transform:translate(-50%,-100px);opacity:0}}';
+        document.head.appendChild(s);
+      }
+      document.body.appendChild(el); setTimeout(() => el.remove(), 1800);
+    }
+  }
+  return { LiveRoom: { join: (id, opt) => new RoomSession(id, opt) } };
+});
+  </script>
+
+  <!-- APPLICATION CODE -->
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const room = LiveRoom.join(urlParams.get('room') || 'lounge');
+    room.cursors(true);
+
+    const pollOptions = [
+      'Server-Authoritative Seq (LiveRoom)',
+      'CRDTs (Yjs / Automerge)',
+      'Operational Transformation (OT)',
+      'Peer-to-Peer Mesh'
+    ];
+
+    document.getElementById('currentRoomTag').textContent = room.roomId;
+
+    window.switchTab = (tab) => {
+      document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+      document.getElementById(`view-${tab}`).classList.add('active');
+      document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+    };
+
+    window.toggleTheme = () => {
+      const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+    };
+
+    window.toggleDevTools = () => document.getElementById('devtoolsDrawer').classList.toggle('open');
+
+    room.on('status', (s) => {
+      document.getElementById('statusBadge').className = `status-badge ${s}`;
+      document.getElementById('statusText').textContent = s.toUpperCase();
+    });
+
+    room.on('presence', (users) => {
+      document.getElementById('usersListContainer').innerHTML = users.map(u => `
+        <div style="padding:6px 12px; background:var(--bg-secondary); border-radius:6px; display:flex; align-items:center; gap:8px;">
+          <div style="width:8px; height:8px; border-radius:50%; background:${u.color};"></div>
+          <span>${u.name} ${u.clientId === room.clientId ? '<strong>(You)</strong>' : ''}</span>
+        </div>
+      `).join('');
+    });
+
+    room.on('latency', (rtt) => document.getElementById('devPingBadge').textContent = `RTT: ${rtt} ms`);
+
+    room.on('state', (key, val, meta) => {
+      document.getElementById('devStateJson').textContent = JSON.stringify(room.rawState(), null, 2);
+      const log = document.getElementById('devEventLogContent');
+      const item = document.createElement('div');
+      item.style.cssText = 'padding:2px 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:0.75rem;';
+      item.textContent = `[#${meta.seq || 0}] ${key} = ${JSON.stringify(val)}`;
+      log.insertBefore(item, log.firstChild);
+
+      if (key === 'text') document.getElementById('sharedTextInput').value = val || '';
+      else if (key === 'counter') document.getElementById('sharedCounterVal').textContent = val ?? 0;
+      else if (key === 'quiz_votes') renderQuiz(val || {});
+      else if (key === 'sticky_notes') renderStickies(val || {});
+    });
+
+    document.getElementById('sharedTextInput').addEventListener('input', (e) => room.set('text', e.target.value));
+    window.adjustCounter = (delta) => room.set('counter', (room.get('counter') || 0) + delta);
+    window.simulateChaosDisconnect = () => room.simulateDisconnect(4);
+    window.copyRoomLink = () => navigator.clipboard.writeText(location.href);
+
+    function renderQuiz(votes) {
+      const counts = [0, 0, 0, 0];
+      const total = Object.keys(votes).length;
+      document.getElementById('quizTotalVotes').textContent = `Total Votes: ${total}`;
+      for (const idx of Object.values(votes)) if (counts[idx] !== undefined) counts[idx]++;
+
+      document.getElementById('quizOptionsContainer').innerHTML = pollOptions.map((text, i) => {
+        const pct = total > 0 ? Math.round((counts[i] / total) * 100) : 0;
+        const sel = votes[room.clientId] === i;
+        return `
+          <button class="poll-option-btn ${sel ? 'selected' : ''}" onclick="castVote(${i})">
+            <div class="poll-bar" style="width:${pct}%;"></div>
+            <span class="poll-text">${text}</span>
+            <span class="poll-count">${counts[i]} (${pct}%)</span>
+          </button>
+        `;
+      }).join('');
+    }
+    window.castVote = (i) => {
+      const v = Object.assign({}, room.get('quiz_votes') || {});
+      v[room.clientId] = i;
+      room.set('quiz_votes', v);
+    };
+    window.resetQuiz = () => room.set('quiz_votes', {});
+    renderQuiz(room.get('quiz_votes') || {});
+
+    function renderStickies(notes) {
+      document.getElementById('stickyBoard').innerHTML = Object.entries(notes).map(([id, n]) => `
+        <div class="sticky-note sticky-${n.color || 'yellow'}">
+          <textarea class="sticky-textarea" oninput="updateSticky('${id}', this.value)">${n.text || ''}</textarea>
+          <div style="display:flex; justify-content:space-between; font-size:0.75rem; opacity:0.8;">
+            <span>${n.author || 'User'}</span>
+            <button style="background:none; border:none; cursor:pointer;" onclick="deleteSticky('${id}')">✕</button>
+          </div>
+        </div>
+      `).join('');
+    }
+    window.addStickyNote = () => {
+      const notes = Object.assign({}, room.get('sticky_notes') || {});
+      const id = 'n_' + Math.random().toString(36).slice(2, 7);
+      notes[id] = { text: 'New note...', color: 'yellow', author: room.name };
+      room.set('sticky_notes', notes);
+    };
+    window.updateSticky = (id, text) => {
+      const notes = Object.assign({}, room.get('sticky_notes') || {});
+      if (notes[id]) { notes[id].text = text; room.set('sticky_notes', notes); }
+    };
+    window.deleteSticky = (id) => {
+      const notes = Object.assign({}, room.get('sticky_notes') || {});
+      delete notes[id];
+      room.set('sticky_notes', notes);
+    };
+    renderStickies(room.get('sticky_notes') || {});
+
+    // Metrics poll
+    setInterval(async () => {
+      try {
+        const res = await fetch('/metrics');
+        if (res.ok) {
+          const d = await res.json();
+          document.getElementById('metricRooms').textContent = d.totalRooms;
+          document.getElementById('metricMsgSec').textContent = d.messagesPerSecond;
+        }
+      } catch (_) {}
+    }, 4000);
+  </script>
+</body>
+</html>
